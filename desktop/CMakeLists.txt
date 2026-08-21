@@ -136,6 +136,8 @@ qt_add_executable(pcbu_desktop
         ${PLATFORM_RES}
 
         src/main.cpp
+        src/CloudCommandListener.cpp
+        src/CloudCommandListener.h
         src/installer/ServiceInstaller.h
         src/utils/QRUtils.cpp
         src/utils/QRUtils.h

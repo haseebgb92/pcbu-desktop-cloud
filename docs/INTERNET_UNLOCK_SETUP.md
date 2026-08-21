@@ -20,6 +20,8 @@
 
 After pairing, the PC and phone may be on completely different internet connections. When Windows needs credentials, the PC posts an encrypted one-time challenge. Android shows a high-priority notification. Tap it and approve with a strong fingerprint or face biometric. Windows still validates the real account password normally.
 
+To lock Windows remotely, open the Android app and tap **Lock PC** beside the paired system. The desktop listener validates and decrypts the short-lived command before calling the Windows lock API. The listener starts automatically at Windows sign-in and remains active when the desktop window is closed.
+
 The Android foreground notification must remain enabled so the operating system keeps the internet listener alive. On phones with aggressive battery management, exclude **PC Bio Unlock Cloud** from battery optimization.
 
 ## Recovery and safety

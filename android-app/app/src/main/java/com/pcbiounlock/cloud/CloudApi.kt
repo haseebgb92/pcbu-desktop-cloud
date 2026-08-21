@@ -34,4 +34,6 @@ class CloudApi(private val baseUrl: String) {
     fun poll(accountToken: String, deviceId: String) = call("/v1/relay/devices/$deviceId/requests", "GET", token = accountToken)
     fun respond(accountToken: String, requestId: String, payload: String) =
         call("/v1/relay/requests/$requestId/response", "POST", JSONObject().put("payload", payload), accountToken)
+    fun sendCommand(accountToken: String, deviceId: String, payload: String) =
+        call("/v1/relay/devices/$deviceId/commands", "POST", JSONObject().put("payload", payload), accountToken)
 }

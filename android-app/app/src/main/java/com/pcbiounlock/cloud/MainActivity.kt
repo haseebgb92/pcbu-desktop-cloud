@@ -108,9 +108,20 @@ class MainActivity : AppCompatActivity() {
             val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(18,18,18,18)}
             box.addView(text("${pc.name} • ${pc.userName}",18f));box.addView(text(if(pc.cloudDeviceId.isBlank())"Local only — re-pair after enabling PC Cloud Profile" else "Remote ready"))
             val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-            row.addView(button("Remote ready"){toast("Lock the PC normally, then approve its biometric request here.")},LinearLayout.LayoutParams(0,-2,1f))
+            row.addView(button("Lock PC"){lockPc(pc)},LinearLayout.LayoutParams(0,-2,1f))
             box.addView(row);root.addView(box)
         }
+    }
+
+    private fun lockPc(pc: PairedPc) {
+        val a=api?:return; val s=session?:return
+        if(pc.cloudDeviceId.isBlank()){toast("This PC is local-only. Pair it again using Internet relay.");return}
+        io.submit { runCatching {
+            val command=JSONObject().put("action","LOCK").put("deviceId",pc.localDeviceId)
+            val encrypted=LegacyProtocol.hexEncode(LegacyProtocol.encryptPacket(command.toString().toByteArray(),pc.encryptionKey))
+            a.sendCommand(s.accountToken,pc.cloudDeviceId,JSONObject().put("deviceId",pc.localDeviceId).put("encData",encrypted).toString())
+        }.onSuccess{runOnUiThread{toast("Lock command sent to ${pc.name}")}}
+            .onFailure{runOnUiThread{toast(it.message?:"Could not lock PC")}} }
     }
 
     private fun pairPc(qr:String){val s=session?:return;io.submit{runCatching{PairingClient(this,store).pair(qr,s,store.identity())}.onSuccess{pc->val p=store.pairs();p.removeAll{it.localDeviceId==pc.localDeviceId};p+=pc;store.savePairs(p);runOnUiThread{startListener();toast("Paired ${pc.name}");render()}}.onFailure{runOnUiThread{toast(it.message?:"Pairing failed")}}}}

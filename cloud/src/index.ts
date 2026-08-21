@@ -72,6 +72,26 @@ async function route(r: Request, env: Env): Promise<Response> {
     ]);
     return json({ id, expiresAt: t + 120 }, 201);
   }
+  const command = p.match(/^\/v1\/relay\/devices\/([^/]+)\/commands$/);
+  if (r.method === "POST" && command) {
+    const uid = await userId(r, env); if (!uid) return json({ error: "UNAUTHORIZED" }, 401);
+    const owned = await env.DB.prepare("SELECT id FROM devices WHERE id=? AND user_id=?").bind(command[1], uid).first();
+    if (!owned) return json({ error: "DEVICE_NOT_FOUND" }, 404);
+    const b = await body(r), payload = textField(b.payload, "payload", 2, 8192), id = crypto.randomUUID(), t = now();
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM relay_messages WHERE expires_at<=?").bind(t),
+      env.DB.prepare("INSERT INTO relay_messages(id,device_id,direction,payload,created_at,expires_at) VALUES(?,?,'phone_to_pc',?,?,?)").bind(id,command[1],payload,t,t+120)
+    ]);
+    return json({ id, expiresAt: t + 120 }, 201);
+  }
+  if (r.method === "GET" && p === "/v1/relay/commands") {
+    const d = await device(r, env); if (!d) return json({ error: "UNAUTHORIZED" }, 401);
+    const msg = await env.DB.prepare("SELECT id,payload FROM relay_messages WHERE device_id=? AND direction='phone_to_pc' AND request_id IS NULL AND consumed_at IS NULL AND expires_at>? ORDER BY created_at LIMIT 1")
+      .bind(d.id, now()).first<{id:string,payload:string}>();
+    if (!msg) return new Response(null, { status: 204 });
+    await env.DB.prepare("UPDATE relay_messages SET consumed_at=? WHERE id=?").bind(now(), msg.id).run();
+    return json(msg);
+  }
   const poll = p.match(/^\/v1\/relay\/devices\/([^/]+)\/requests$/);
   if (r.method === "GET" && poll) {
     const uid = await userId(r, env); if (!uid) return json({ error: "UNAUTHORIZED" }, 401);

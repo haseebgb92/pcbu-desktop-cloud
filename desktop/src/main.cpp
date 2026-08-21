@@ -1,8 +1,10 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
+#include <QWindow>
 
 #include "storage/LoggingSystem.h"
+#include "CloudCommandListener.h"
 
 int main(int argc, char *argv[]) {
   qputenv("QT_QUICK_CONTROLS_STYLE", QByteArray("Material"));
@@ -13,6 +15,7 @@ int main(int argc, char *argv[]) {
   LoggingSystem::Init("desktop");
 
   QGuiApplication app(argc, argv);
+  app.setQuitOnLastWindowClosed(false);
   QGuiApplication::setWindowIcon(QIcon(":/res/icons/icon.png"));
 
   auto url = QUrl("qrc:/ui/MainWindow.qml");
@@ -26,6 +29,12 @@ int main(int argc, char *argv[]) {
       },
       Qt::QueuedConnection);
   engine.load(url);
+
+  const auto background = app.arguments().contains("--background");
+  if(background && !engine.rootObjects().empty()) {
+    if(auto *window = qobject_cast<QWindow *>(engine.rootObjects().first())) window->hide();
+  }
+  CloudCommandListener cloudCommands;
 
   auto result = QGuiApplication::exec();
   LoggingSystem::Destroy();
