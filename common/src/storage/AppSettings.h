@@ -19,6 +19,7 @@ struct PCBUAppStorage {
   uint32_t clientSocketTimeout{};
   uint32_t clientConnectTimeout{};
   uint32_t clientConnectRetries{};
+  std::string cloudRelayUrl{};
 
   std::string winUnlockBehavior{};
   bool winHidePasswordField{};

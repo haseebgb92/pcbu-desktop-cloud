@@ -39,6 +39,8 @@ public:
 
 protected:
   void PerformAuthFlow(SOCKET socket, bool needsDeviceID = false);
+  std::optional<std::string> BuildUnlockRequestJson();
+  void ProcessUnlockResponseJson(const std::string &json);
 
 private:
   void OnPacketReceived(SOCKET socket, Packet &packet);

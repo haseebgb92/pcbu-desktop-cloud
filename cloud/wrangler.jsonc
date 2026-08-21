@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pcbu-relay",
+  "account_id": "5d1e7e191a9f783ab6f833c96ead890c",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-21",
+  "observability": { "enabled": true },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "pcbu-relay",
+    "database_id": "b17f45e6-e947-44e0-a7ba-996581871158",
+    "migrations_dir": "migrations"
+  }],
+  "vars": {
+    "ALLOWED_ORIGIN": "https://pcbu.invalid"
+  }
+}

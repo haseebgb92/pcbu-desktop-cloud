@@ -3,7 +3,7 @@
 #include "KeyScanner.h"
 #include "connection/unlock/clients/BTUnlockClient.h"
 #include "connection/unlock/clients/TCPUnlockClient.h"
-#include "connection/unlock/servers/TCPUnlockServer.h"
+#include "connection/unlock/clients/CloudUnlockClient.h"
 #include "storage/AppSettings.h"
 
 #ifdef WINDOWS
@@ -25,7 +25,6 @@ UnlockHandler::UnlockHandler(const std::function<void(std::string)> &printMessag
 UnlockResult UnlockHandler::GetResult(const std::string &authUser, const std::string &authProgram, std::atomic<bool> *isRunning) {
   auto settings = AppSettings::Get();
   auto devices = PairedDevicesStorage::GetDevicesForUser(authUser);
-  auto hasTCPServer = false;
 
   UDPUnlockBroadcaster *udpBroadcaster{};
   std::vector<BaseUnlockConnection *> connections{};
@@ -46,8 +45,8 @@ UnlockResult UnlockHandler::GetResult(const std::string &authUser, const std::st
         udpBroadcaster->AddDevice(device.id, port, device.pairingMethod == PairingMethod::MANUAL_UDP);
       }
       case PairingMethod::CLOUD_TCP:
-        hasTCPServer = true;
-        continue;
+        connection = new CloudUnlockClient(device);
+        break;
       default: {
         spdlog::error("Invalid pairing method.");
         continue;
@@ -57,11 +56,6 @@ UnlockResult UnlockHandler::GetResult(const std::string &authUser, const std::st
       connection->SetUnlockInfo(authUser, authProgram);
       connections.emplace_back(connection);
     }
-  }
-  if(hasTCPServer) {
-    auto server = new TCPUnlockServer();
-    server->SetUnlockInfo(authUser, authProgram);
-    connections.emplace_back(server);
   }
   if(connections.empty()) {
     auto errorMsg = I18n::Get("error_not_paired", authUser);

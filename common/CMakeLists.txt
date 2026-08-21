@@ -83,6 +83,8 @@ add_library(pcbu_common
         src/connection/unlock/UDPUnlockBroadcaster.h
         src/connection/unlock/clients/TCPUnlockClient.h
         src/connection/unlock/clients/TCPUnlockClient.cpp
+        src/connection/unlock/clients/CloudUnlockClient.h
+        src/connection/unlock/clients/CloudUnlockClient.cpp
         src/connection/unlock/clients/BTUnlockClient.h
         src/connection/unlock/servers/BTUnlockServer.h
         src/connection/unlock/servers/TCPUnlockServer.cpp

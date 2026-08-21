@@ -1,0 +1,17 @@
+{
+  "name": "pcbu-cloud-relay",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "@cloudflare/vitest-pool-workers": "latest",
+    "typescript": "latest",
+    "vitest": "latest",
+    "wrangler": "latest"
+  }
+}

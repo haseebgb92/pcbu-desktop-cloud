@@ -1,0 +1,61 @@
+name: PCBU Cloud Windows CI
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  QT_VERSION: 6.10.2
+
+jobs:
+  build-windows-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Qt x64
+        uses: jurplel/install-qt-action@v4
+        with:
+          dir: C:/
+          version: ${{ env.QT_VERSION }}
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          cache: true
+          cache-key-prefix: qt-x64
+
+      - name: Checkout vcpkg
+        uses: actions/checkout@v7
+        with:
+          repository: microsoft/vcpkg
+          path: vcpkg
+          fetch-depth: 1
+
+      - name: Bootstrap vcpkg
+        shell: cmd
+        working-directory: vcpkg
+        run: bootstrap-vcpkg.bat
+
+      - name: Build OpenSSL dependencies
+        shell: bash
+        run: |
+          ./vcpkg/vcpkg.exe install --overlay-triplets=cmake/vcpkg-triplets --triplet x64-windows-static openssl
+          ./vcpkg/vcpkg.exe install --overlay-triplets=cmake/vcpkg-triplets --triplet x64-windows-static-md openssl
+
+      - name: Build installer
+        shell: bash
+        working-directory: pkg
+        env:
+          ARCH: x64
+          QT_BASE_DIR: C:/Qt/${{ env.QT_VERSION }}
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+        run: ./build-desktop.sh
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: PC-Bio-Unlock-Cloud-Windows-x64
+          path: pkg/build/PCBioUnlock-Setup-x64.exe
+          if-no-files-found: error

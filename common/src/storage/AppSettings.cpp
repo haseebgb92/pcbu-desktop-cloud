@@ -58,6 +58,7 @@ PCBUAppStorage AppSettings::Load() {
     settings.clientSocketTimeout = json["clientSocketTimeout"];
     settings.clientConnectTimeout = json["clientConnectTimeout"];
     settings.clientConnectRetries = json["clientConnectRetries"];
+    settings.cloudRelayUrl = json.value("cloudRelayUrl", "https://pcbu-relay.advsolar.workers.dev");
 
     settings.winUnlockBehavior = json.value("winUnlockBehavior", "key_press_lock_only");
     settings.winHidePasswordField = json["winHidePasswordField"];
@@ -81,6 +82,7 @@ PCBUAppStorage AppSettings::Load() {
     def.clientSocketTimeout = 120;
     def.clientConnectTimeout = 5;
     def.clientConnectRetries = 2;
+    def.cloudRelayUrl = "https://pcbu-relay.advsolar.workers.dev";
 
     def.winUnlockBehavior = "key_press_lock_only";
     def.winHidePasswordField = false;
@@ -108,6 +110,7 @@ void AppSettings::Save(const PCBUAppStorage &storage) {
         {"clientSocketTimeout", storage.clientSocketTimeout},
         {"clientConnectTimeout", storage.clientConnectTimeout},
         {"clientConnectRetries", storage.clientConnectRetries},
+        {"cloudRelayUrl", storage.cloudRelayUrl},
 
         {"winUnlockBehavior", storage.winUnlockBehavior},
         {"winHidePasswordField", storage.winHidePasswordField},

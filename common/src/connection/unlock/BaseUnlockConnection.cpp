@@ -114,6 +114,24 @@ void BaseUnlockConnection::OnPacketReceived(SOCKET socket, Packet &packet) {
 }
 
 bool BaseUnlockConnection::SendUnlockRequest(SOCKET socket) {
+  auto request = BuildUnlockRequestJson();
+  if(!request.has_value())
+    return false;
+  spdlog::debug("Writing PacketUnlockRequest...");
+  auto writeResult = WritePacket(socket, PACKET_ID_UNLOCK_REQUEST, {request->begin(), request->end()});
+  if(writeResult != PacketError::NONE) {
+    switch(writeResult) {
+      case PacketError::CLOSED_CONNECTION: m_UnlockState = UnlockState::CONNECT_ERROR; break;
+      case PacketError::TIMEOUT: m_UnlockState = UnlockState::TIMEOUT; break;
+      default: m_UnlockState = UnlockState::UNK_ERROR; break;
+    }
+    spdlog::error("Failed to write unlock request packet. (WriteResult={}, UnlockState={})", static_cast<int>(writeResult), UnlockStateUtils::ToString(m_UnlockState));
+    return false;
+  }
+  return true;
+}
+
+std::optional<std::string> BaseUnlockConnection::BuildUnlockRequestJson() {
   auto encData = PacketUnlockRequestData();
   encData.user = m_AuthUser;
   encData.program = m_AuthProgram;
@@ -123,36 +141,22 @@ bool BaseUnlockConnection::SendUnlockRequest(SOCKET socket) {
   if(cryptResult.result != PacketCryptResult::OK) {
     spdlog::error("Failed to encrypt unlock request packet.");
     m_UnlockState = UnlockState::UNK_ERROR;
-    return false;
+    return {};
   }
   auto requestPacket = PacketUnlockRequest();
   requestPacket.protoVersion = AppInfo::GetUnlockProtocolVersion();
   requestPacket.deviceId = m_PairedDevice.id;
   requestPacket.encData = StringUtils::ToHexString(cryptResult.data);
-  auto requestStr = requestPacket.ToJson().dump();
-  spdlog::debug("Writing PacketUnlockRequest...");
-  auto writeResult = WritePacket(socket, PACKET_ID_UNLOCK_REQUEST, {requestStr.begin(), requestStr.end()});
-  if(writeResult != PacketError::NONE) {
-    switch(writeResult) {
-      case PacketError::CLOSED_CONNECTION:
-        m_UnlockState = UnlockState::CONNECT_ERROR;
-        break;
-      case PacketError::TIMEOUT:
-        m_UnlockState = UnlockState::TIMEOUT;
-        break;
-      default:
-        m_UnlockState = UnlockState::UNK_ERROR;
-        break;
-    }
-    spdlog::error("Failed to write unlock request packet. (WriteResult={}, UnlockState={})", static_cast<int>(writeResult), UnlockStateUtils::ToString(m_UnlockState));
-    return false;
-  }
-  return true;
+  return requestPacket.ToJson().dump();
 }
 
 void BaseUnlockConnection::OnResponseReceived(const Packet &packet) {
-  // Parse data
   auto respStr = std::string(packet.data.begin(), packet.data.end());
+  ProcessUnlockResponseJson(respStr);
+}
+
+void BaseUnlockConnection::ProcessUnlockResponseJson(const std::string &respStr) {
+  // Parse data
   auto responsePacket = PacketUnlockResponse::FromJson(respStr);
   if(!responsePacket.has_value()) {
     spdlog::error("Error parsing response packet.");
@@ -193,7 +197,7 @@ void BaseUnlockConnection::OnResponseReceived(const Packet &packet) {
         break;
       }
       default: {
-        spdlog::error("Invalid data received. (Size={})", packet.data.size());
+        spdlog::error("Invalid data received. (Size={})", respStr.size());
         m_UnlockState = UnlockState::DATA_ERROR;
         break;
       }

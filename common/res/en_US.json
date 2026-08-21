@@ -144,10 +144,12 @@
   "pairing_method_tcp_select": "Use TCP",
   "pairing_method_udp_select": "Use UDP",
   "pairing_method_bt_select": "Use Bluetooth",
+  "pairing_method_cloud_select": "Use Internet relay",
   "pairing_method_manual_udp_select": "Use UDP manually",
   "pairing_method_tcp_desc": "Alternative to UDP. Requires periodic re-pairing unless a static IP is set. Unlock prompts appear faster than with UDP.",
   "pairing_method_udp_desc": "Recommended for desktop PCs or notebooks used at home. Works on any local network or Wi-Fi. Both devices have to be on the same network.",
   "pairing_method_bt_desc": "Recommended for mobile notebooks or tablets. May be unreliable depending on your Bluetooth adapter. Uses a lot of battery power.",
+  "pairing_method_cloud_desc": "Works from any internet connection. Unlock packets remain end-to-end encrypted between this PC and your phone.",
   "pairing_method_manual_udp_desc": "Works on any local network or Wi-Fi. Both devices have to be on the same network.",
 
   "service_setting_wait_for_key": "Wait for key press at login",

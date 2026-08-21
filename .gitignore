@@ -9,3 +9,9 @@ pkg/build
 common/src/generated
 desktop/res/natives
 compile_commands.json
+**/node_modules
+**/.wrangler
+.tools
+**/build
+.gradle
+**/local.properties
