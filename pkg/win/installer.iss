@@ -24,7 +24,7 @@ Type: files; Name: "{win}\System32\win-pcbiounlock.dll"
 Name: "{group}\PC Bio Unlock"; Filename: "{app}\pcbu_desktop.exe"
 
 [Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PCBioUnlockCloud"; ValueData: "{quote}{app}\pcbu_desktop.exe{quote} --background"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "PCBioUnlockCloud"; ValueData: """{app}\pcbu_desktop.exe"" --background"; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\pcbu_desktop.exe"; Description: "Launch PC Bio Unlock"; Verb: runas; Flags: postinstall nowait skipifsilent runascurrentuser shellexec
