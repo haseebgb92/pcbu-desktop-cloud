@@ -104,7 +104,7 @@ if [[ "$PLATFORM" == "win" ]]; then
   curl --fail --location --retry 5 --retry-delay 3 --output vcredist.exe "$VC_REDIST_URL"
 
   iscc ../win/installer.iss
-  mv mysetup.exe PCBioUnlock-Setup-"$ARCH".exe
+  mv mysetup.exe Advertpreneur-Smart-Unlock-Setup-"$ARCH".exe
 elif [[ "$PLATFORM" == "linux" ]]; then
   wget "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-$LINUX_ARCH.AppImage" && chmod +x ./linuxdeploy-"$LINUX_ARCH".AppImage
   wget "https://github.com/darealshinji/linuxdeploy-plugin-checkrt/releases/download/continuous/linuxdeploy-plugin-checkrt.sh" && chmod +x ./linuxdeploy-plugin-checkrt.sh

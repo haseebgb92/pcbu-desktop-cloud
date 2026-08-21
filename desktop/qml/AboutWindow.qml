@@ -13,7 +13,7 @@ ApplicationWindow {
         anchors.fill: parent
         anchors.margins: 25
         Label {
-            text: 'PC Bio Unlock'
+            text: 'Advertpreneur Smart Unlock'
             font.pointSize: 36
         }
         Label {

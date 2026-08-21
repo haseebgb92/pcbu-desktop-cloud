@@ -23,8 +23,8 @@ class UnlockListenerService : Service() {
         super.onCreate()
         multicastLock = (applicationContext.getSystemService(WIFI_SERVICE) as WifiManager).createMulticastLock("pcbu-unlock").apply { setReferenceCounted(false); acquire() }
         val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel("pcbu", "PC Bio Unlock", NotificationManager.IMPORTANCE_HIGH))
-        startForeground(41, NotificationCompat.Builder(this, "pcbu").setContentTitle("PC Bio Unlock")
+        nm.createNotificationChannel(NotificationChannel("pcbu", "Advertpreneur Smart Unlock", NotificationManager.IMPORTANCE_HIGH))
+        startForeground(41, NotificationCompat.Builder(this, "pcbu").setContentTitle("Advertpreneur Smart Unlock")
             .setContentText("Ready for fingerprint or face unlock").setSmallIcon(R.drawable.app_logo).setOngoing(true).build())
         pool.submit { listen(43300) }
         pool.submit { listen(43301) }

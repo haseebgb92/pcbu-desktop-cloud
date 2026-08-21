@@ -12,7 +12,8 @@ ApplicationWindow {
     minimumWidth: 1024
     minimumHeight: 768
     visible: true
-    title: 'PC Bio Unlock'
+    title: 'Advertpreneur Smart Unlock'
+    color: '#0b1020'
 
     property bool canClose: true
     onClosing: function(close) { close.accepted = window.canClose }
@@ -20,10 +21,32 @@ ApplicationWindow {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 25
-        Label {
-            id: title
-            text: 'PC Bio Unlock'
-            font.pointSize: 36
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 18
+            Image {
+                source: 'qrc:/res/icons/icon.png'
+                sourceSize.width: 72
+                sourceSize.height: 72
+                Layout.preferredWidth: 72
+                Layout.preferredHeight: 72
+                fillMode: Image.PreserveAspectFit
+            }
+            ColumnLayout {
+                spacing: 2
+                Label {
+                    id: title
+                    text: 'Advertpreneur Smart Unlock'
+                    color: '#f5f7ff'
+                    font.pointSize: 30
+                    font.bold: true
+                }
+                Label {
+                    text: 'Secure biometric access from anywhere'
+                    color: '#a3aec6'
+                    font.pointSize: 12
+                }
+            }
         }
         Loader {
             id: viewLoader

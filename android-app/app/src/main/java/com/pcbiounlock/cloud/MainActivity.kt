@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         root.removeAllViews()
         val brand=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
         brand.addView(ImageView(this).apply{setImageResource(R.drawable.app_logo);scaleType=ImageView.ScaleType.CENTER_INSIDE},LinearLayout.LayoutParams(dp(64),dp(64)))
-        brand.addView(LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),0,0,0);addView(heading("PC Bio Unlock",26f));addView(text("Secure biometric access",14f,MUTED))},LinearLayout.LayoutParams(0,-2,1f))
+        brand.addView(LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),0,0,0);addView(heading("Advertpreneur",26f));addView(text("Smart Unlock",14f,MUTED))},LinearLayout.LayoutParams(0,-2,1f))
         root.addView(brand);root.addView(space(22))
         val s=session
         if(s==null) renderLogin() else renderDashboardV2(s)
@@ -119,7 +119,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun renderDashboard(s:CloudSession){
         root.addView(text("Profile connected",18f));root.addView(text("Phone ${s.phoneDeviceId.take(10)}…"))
-        root.addView(button("Pair a PC by QR"){qrLauncher.launch(ScanOptions().setPrompt("Scan the QR shown by PC Bio Unlock").setBeepEnabled(false))})
+        root.addView(button("Pair a PC by QR"){qrLauncher.launch(ScanOptions().setPrompt("Scan the QR shown by Advertpreneur Smart Unlock").setBeepEnabled(false))})
         root.addView(button("Log out"){controller?.close();controller=null;stopService(Intent(this,UnlockListenerService::class.java));session=null;store.remove("cloud_session");render()})
         root.addView(text("My systems",20f))
         val pcs=store.pairs();if(pcs.isEmpty())root.addView(text("No PC paired yet."))
