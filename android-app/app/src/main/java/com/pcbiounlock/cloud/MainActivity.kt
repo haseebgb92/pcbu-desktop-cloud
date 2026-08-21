@@ -55,9 +55,10 @@ class MainActivity : AppCompatActivity() {
         this.hint=hint; setHintTextColor(MUTED); setTextColor(TEXT); textSize=16f; setPadding(dp(16),dp(12),dp(16),dp(12)); background=shape(SURFACE,14,BORDER)
         if(secret) inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
     }
-    private fun button(label: String, primary:Boolean=true, f:()->Unit)=Button(this).apply {
+    private fun button(label: String, primary:Boolean=true, icon:Int=0, f:()->Unit)=Button(this).apply {
         text=label; isAllCaps=false; textSize=15f; setTypeface(typeface,Typeface.BOLD); setTextColor(if(primary)Color.WHITE else TEXT)
         backgroundTintList=ColorStateList.valueOf(if(primary)ACCENT else SURFACE_2); setPadding(dp(16),dp(8),dp(16),dp(8)); setOnClickListener{f()}
+        if(icon!=0){setCompoundDrawablesWithIntrinsicBounds(icon,0,0,0);compoundDrawablePadding=dp(7)}
     }
     private fun toast(v:String)=Toast.makeText(this,v,Toast.LENGTH_LONG).show()
 
@@ -152,8 +153,9 @@ class MainActivity : AppCompatActivity() {
             box.addView(heading(pc.name,19f));box.addView(text(pc.userName,14f,MUTED));box.addView(space(8))
             box.addView(text(if(pc.cloudDeviceId.isBlank())"Local only - pair again with Internet relay" else "Online relay ready",14f,if(pc.cloudDeviceId.isBlank())WARNING else SUCCESS))
             val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
-            row.addView(button("Lock PC"){lockPc(pc)},LinearLayout.LayoutParams(0,-2,1f));row.addView(space(8),LinearLayout.LayoutParams(dp(8),1))
-            row.addView(button("Remove",false){val all=store.pairs();all.removeAll{it.localDeviceId==pc.localDeviceId};store.savePairs(all);render()})
+            row.addView(button("Lock",true,R.drawable.ic_lock){lockPc(pc)},LinearLayout.LayoutParams(0,-2,1f));row.addView(space(8),LinearLayout.LayoutParams(dp(8),1))
+            row.addView(button("Unlock",false,R.drawable.ic_unlock){unlockPc(pc)},LinearLayout.LayoutParams(0,-2,1f));row.addView(space(8),LinearLayout.LayoutParams(dp(8),1))
+            row.addView(button("",false,R.drawable.ic_remove){val all=store.pairs();all.removeAll{it.localDeviceId==pc.localDeviceId};store.savePairs(all);render()})
             box.addView(space(14));box.addView(row);root.addView(box);root.addView(space(12))
         }
     }
@@ -167,6 +169,21 @@ class MainActivity : AppCompatActivity() {
             a.sendCommand(s.accountToken,pc.cloudDeviceId,JSONObject().put("deviceId",pc.localDeviceId).put("encData",encrypted).toString())
         }.onSuccess{runOnUiThread{toast("Lock command sent to ${pc.name}")}}
             .onFailure{runOnUiThread{toast(it.message?:"Could not lock PC")}} }
+    }
+
+    private fun unlockPc(pc: PairedPc) {
+        val pending=store.get("cloud_pending")?.let{runCatching{JSONObject(it)}.getOrNull()}
+        if(pending==null || pending.optString("deviceId")!=pc.localDeviceId){
+            toast("No unlock request is waiting. Wake the Windows lock screen, wait a moment, then tap Unlock again.");return
+        }
+        val challenge=runCatching{JSONObject(pending.getString("challenge"))}.getOrNull()
+        if(challenge==null){toast("The unlock request is invalid or expired.");store.remove("cloud_pending");return}
+        biometric("Unlock ${pc.name}"){ok->
+            if(!ok)return@biometric
+            io.submit{runCatching{controller?.approve(pc,challenge)?:false}.onSuccess{sent->runOnUiThread{
+                if(sent){store.remove("cloud_pending");toast("Unlock approved for ${pc.name}")}else toast("Unlock service is not ready. Reopen the app and try again.")
+            }}.onFailure{runOnUiThread{toast(it.message?:"Remote unlock failed")}}}
+        }
     }
 
     private fun pairPc(qr:String){val s=session?:return;io.submit{runCatching{PairingClient(this,store).pair(qr,s,store.identity())}.onSuccess{pc->val p=store.pairs();p.removeAll{it.localDeviceId==pc.localDeviceId};p+=pc;store.savePairs(p);runOnUiThread{startListener();toast("Paired ${pc.name}");render()}}.onFailure{runOnUiThread{toast(it.message?:"Pairing failed")}}}}
