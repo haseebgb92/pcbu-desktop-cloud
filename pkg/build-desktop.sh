@@ -95,6 +95,14 @@ if [[ "$PLATFORM" == "win" ]]; then
     rm installer_dir/opengl32sw.dll
   fi
 
+  if [[ "$ARCH" == "x64" ]]; then
+    VC_REDIST_URL="https://aka.ms/vs/17/release/vc_redist.x64.exe"
+  else
+    VC_REDIST_URL="https://aka.ms/vs/17/release/vc_redist.arm64.exe"
+  fi
+  echo "Embedding Microsoft Visual C++ runtime..."
+  curl --fail --location --retry 5 --retry-delay 3 --output vcredist.exe "$VC_REDIST_URL"
+
   iscc ../win/installer.iss
   mv mysetup.exe PCBioUnlock-Setup-"$ARCH".exe
 elif [[ "$PLATFORM" == "linux" ]]; then
