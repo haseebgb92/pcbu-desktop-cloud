@@ -34,9 +34,18 @@ void CloudCommandListener::Run() {
         const auto decrypted = CryptUtils::DecryptAESPacket(StringUtils::FromHexString(payload.at("encData").get<std::string>()), device.encryptionKey);
         if(decrypted.result != PacketCryptResult::OK) continue;
         const auto command = nlohmann::json::parse(std::string(decrypted.data.begin(), decrypted.data.end()));
-        if(command.value("action", "") == "LOCK" && command.value("deviceId", "") == device.id) {
+        const auto action = command.value("action", "");
+        if(action == "LOCK" && command.value("deviceId", "") == device.id) {
 #ifdef WINDOWS
           if(!LockWorkStation()) spdlog::error("Remote LockWorkStation failed. (Code={})", GetLastError());
+#endif
+        } else if(action == "PREPARE_UNLOCK" && command.value("deviceId", "") == device.id) {
+#ifdef WINDOWS
+          // Wake the monitor so LogonUI can enumerate the credential provider. Do not
+          // synthesize input: SendInput cannot safely cross Windows' secure desktop.
+          SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
+          SendMessageTimeoutW(HWND_BROADCAST, WM_SYSCOMMAND, SC_MONITORPOWER, static_cast<LPARAM>(-1),
+                              SMTO_ABORTIFHUNG, 1000, nullptr);
 #endif
         }
       } catch(const std::exception &ex) {

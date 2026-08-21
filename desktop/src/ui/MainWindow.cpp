@@ -119,7 +119,14 @@ void MainWindow::OnReinstallClicked(QObject *window) {
       if(ServiceInstaller::IsInstalled())
         installer.Uninstall();
       installer.Install();
-      installer.ApplySettings(installer.GetSettings(), false);
+      auto serviceSettings = installer.GetSettings();
+      // Older builds used key_press_lock_only as their implicit default. Migrate
+      // that value so a remote biometric request starts without local input.
+      for(auto &setting : serviceSettings) {
+        if(setting.id == "unlockBehavior" && setting.selectedValue == "key_press_lock_only")
+          setting.selectedValue = "none";
+      }
+      installer.ApplySettings(serviceSettings, false);
       AppSettings::SetInstalledVersion(true);
       QMetaObject::invokeMethod(window, "finishLoadingScreen", Q_ARG(QVariant, QString::fromUtf8(I18n::Get("success"))));
     } catch(const std::exception &ex) {

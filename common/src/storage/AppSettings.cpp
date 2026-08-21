@@ -60,7 +60,7 @@ PCBUAppStorage AppSettings::Load() {
     settings.clientConnectRetries = json["clientConnectRetries"];
     settings.cloudRelayUrl = json.value("cloudRelayUrl", "https://pcbu-relay.advsolar.workers.dev");
 
-    settings.winUnlockBehavior = json.value("winUnlockBehavior", "key_press_lock_only");
+    settings.winUnlockBehavior = json.value("winUnlockBehavior", "none");
     settings.winHidePasswordField = json["winHidePasswordField"];
     settings.winForceDefaultCredProv = json.value("winForceDefaultCredProv", true);
     settings.unixSetPasswordPAM = json["unixSetPasswordPAM"];
@@ -84,7 +84,7 @@ PCBUAppStorage AppSettings::Load() {
     def.clientConnectRetries = 2;
     def.cloudRelayUrl = "https://pcbu-relay.advsolar.workers.dev";
 
-    def.winUnlockBehavior = "key_press_lock_only";
+    def.winUnlockBehavior = "none";
     def.winHidePasswordField = false;
     def.winForceDefaultCredProv = true;
     def.unixSetPasswordPAM = false;

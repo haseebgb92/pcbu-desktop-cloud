@@ -172,10 +172,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun unlockPc(pc: PairedPc) {
-        val pending=store.get("cloud_pending")?.let{runCatching{JSONObject(it)}.getOrNull()}
-        if(pending==null || pending.optString("deviceId")!=pc.localDeviceId){
-            toast("No unlock request is waiting. Wake the Windows lock screen, wait a moment, then tap Unlock again.");return
-        }
+        val a=api?:return; val s=session?:return
+        if(pc.cloudDeviceId.isBlank()){toast("This PC is local-only. Pair it again using Internet relay.");return}
+        val waiting=store.get("cloud_pending")?.let{runCatching{JSONObject(it)}.getOrNull()}
+        if(waiting!=null && waiting.optString("deviceId")==pc.localDeviceId){approveCloudUnlock(pc,waiting);return}
+        toast("Waking ${pc.name} and preparing secure unlock…")
+        io.submit { runCatching {
+            val command=JSONObject().put("action","PREPARE_UNLOCK").put("deviceId",pc.localDeviceId)
+            val encrypted=LegacyProtocol.hexEncode(LegacyProtocol.encryptPacket(command.toString().toByteArray(),pc.encryptionKey))
+            a.sendCommand(s.accountToken,pc.cloudDeviceId,JSONObject().put("deviceId",pc.localDeviceId).put("encData",encrypted).toString())
+            val deadline=System.currentTimeMillis()+15_000
+            var pending:JSONObject?=null
+            while(System.currentTimeMillis()<deadline && pending==null){
+                Thread.sleep(250)
+                pending=store.get("cloud_pending")?.let{runCatching{JSONObject(it)}.getOrNull()}
+                    ?.takeIf{it.optString("deviceId")==pc.localDeviceId}
+            }
+            pending?:throw IllegalStateException("Windows did not start an unlock request. Make sure the PC is locked and online.")
+        }.onSuccess{pending->runOnUiThread{approveCloudUnlock(pc,pending)}}
+            .onFailure{runOnUiThread{toast(it.message?:"Could not prepare PC unlock")}} }
+    }
+
+    private fun approveCloudUnlock(pc: PairedPc,pending:JSONObject) {
         val challenge=runCatching{JSONObject(pending.getString("challenge"))}.getOrNull()
         if(challenge==null){toast("The unlock request is invalid or expired.");store.remove("cloud_pending");return}
         biometric("Unlock ${pc.name}"){ok->
