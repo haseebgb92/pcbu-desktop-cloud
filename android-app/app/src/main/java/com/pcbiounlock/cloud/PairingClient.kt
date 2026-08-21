@@ -72,7 +72,7 @@ class PairingClient(private val context: Context, private val store: SecureStore
             userName = d.getString("userName"),
             encryptionKey = qr.encKey,
             passwordKey = d.getString("passwordKey"),
-            cloudDeviceId = if(d.optString("cloudAccountId") == session.accountId) d.optString("cloudDeviceId") else "",
+            cloudDeviceId = if(d.optString("pairingMethod") == "CLOUD_TCP") session.phoneDeviceId else "",
             cloudSigningPublicKey = d.optString("cloudSigningPublicKey"),
             cloudExchangePublicKey = d.optString("cloudExchangePublicKey"),
             udpPort = 43300
