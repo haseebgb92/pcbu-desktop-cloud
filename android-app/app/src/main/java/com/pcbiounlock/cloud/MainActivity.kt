@@ -2,6 +2,10 @@ package com.pcbiounlock.cloud
 
 import android.Manifest
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -31,8 +35,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         store = SecureStore(this)
-        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP; setPadding(36,36,36,36) }
-        setContentView(ScrollView(this).apply { addView(root) })
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.TOP; setPadding(dp(20),dp(20),dp(20),dp(36)); setBackgroundColor(BG) }
+        setContentView(ScrollView(this).apply { isFillViewport=true; setBackgroundColor(BG); addView(root) })
         restoreSession()
         render()
         if(Build.VERSION.SDK_INT >= 33) root.post { notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS) }
@@ -42,27 +46,41 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() { controller?.close(); io.shutdownNow(); super.onDestroy() }
 
-    private fun text(value: String, size: Float = 16f) = TextView(this).apply { this.text=value; textSize=size; setPadding(0,8,0,8) }
+    private fun dp(value:Int)=(value*resources.displayMetrics.density).toInt()
+    private fun shape(color:Int,radius:Int=18,stroke:Int?=null)=GradientDrawable().apply{setColor(color);cornerRadius=dp(radius).toFloat();stroke?.let{setStroke(dp(1),it)}}
+    private fun text(value: String, size: Float = 16f, color:Int=TEXT) = TextView(this).apply { this.text=value; textSize=size; setTextColor(color); setPadding(0,dp(4),0,dp(4)) }
+    private fun heading(value:String,size:Float=22f)=text(value,size).apply{setTypeface(typeface,Typeface.BOLD)}
+    private fun space(h:Int)=Space(this).apply{layoutParams=LinearLayout.LayoutParams(1,dp(h))}
     private fun field(hint: String, secret: Boolean=false) = EditText(this).apply {
-        this.hint=hint
+        this.hint=hint; setHintTextColor(MUTED); setTextColor(TEXT); textSize=16f; setPadding(dp(16),dp(12),dp(16),dp(12)); background=shape(SURFACE,14,BORDER)
         if(secret) inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
     }
-    private fun button(label: String, f:()->Unit)=Button(this).apply { text=label; setOnClickListener{f()} }
+    private fun button(label: String, primary:Boolean=true, f:()->Unit)=Button(this).apply {
+        text=label; isAllCaps=false; textSize=15f; setTypeface(typeface,Typeface.BOLD); setTextColor(if(primary)Color.WHITE else TEXT)
+        backgroundTintList=ColorStateList.valueOf(if(primary)ACCENT else SURFACE_2); setPadding(dp(16),dp(8),dp(16),dp(8)); setOnClickListener{f()}
+    }
     private fun toast(v:String)=Toast.makeText(this,v,Toast.LENGTH_LONG).show()
 
     private fun render() {
-        root.removeAllViews(); root.addView(text("PC Bio Unlock Cloud",26f))
+        root.removeAllViews()
+        val brand=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL;gravity=Gravity.CENTER_VERTICAL}
+        brand.addView(ImageView(this).apply{setImageResource(R.drawable.app_logo);scaleType=ImageView.ScaleType.CENTER_INSIDE},LinearLayout.LayoutParams(dp(64),dp(64)))
+        brand.addView(LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(12),0,0,0);addView(heading("PC Bio Unlock",26f));addView(text("Secure biometric access",14f,MUTED))},LinearLayout.LayoutParams(0,-2,1f))
+        root.addView(brand);root.addView(space(22))
         val s=session
-        if(s==null) renderLogin() else renderDashboard(s)
+        if(s==null) renderLogin() else renderDashboardV2(s)
     }
 
     private fun renderLogin() {
         val defaultRelay = "https://pcbu-relay.advsolar.workers.dev"
+        root.addView(heading("Welcome",24f));root.addView(text("Sign in to connect and control your trusted PCs.",15f,MUTED));root.addView(space(18))
+        val card=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(18),dp(18),dp(18));background=shape(CARD,20,BORDER)}
         val url=field(defaultRelay).apply{setText(store.get("base_url")?:defaultRelay)}
         val email=field("User ID"); val password=field("Password (12+ characters)",true)
-        root.addView(url);root.addView(email);root.addView(password)
-        root.addView(button("Log in"){login(url.text.toString(),email.text.toString(),password.text.toString(),false)})
-        root.addView(button("Create profile"){login(url.text.toString(),email.text.toString(),password.text.toString(),true)})
+        card.addView(text("Relay address",13f,MUTED));card.addView(url);card.addView(space(12));card.addView(email);card.addView(space(12));card.addView(password);card.addView(space(18))
+        card.addView(button("Log in"){login(url.text.toString(),email.text.toString(),password.text.toString(),false)});card.addView(space(8))
+        card.addView(button("Create profile",false){login(url.text.toString(),email.text.toString(),password.text.toString(),true)})
+        root.addView(card)
     }
 
     private fun login(base:String,email:String,password:String,register:Boolean){
@@ -113,6 +131,33 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun renderDashboardV2(s:CloudSession) {
+        val biometricReady=BiometricManager.from(this).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)==BiometricManager.BIOMETRIC_SUCCESS
+        val status=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(14),dp(16),dp(14));background=shape(if(biometricReady)SUCCESS_BG else WARNING_BG,16)}
+        status.addView(heading(if(biometricReady)"Fingerprint / face ready" else "Biometric setup required",17f))
+        status.addView(text(if(biometricReady)"Unlock approvals are protected by strong biometrics." else "Enroll a fingerprint or secure face unlock in Android settings.",14f,MUTED))
+        root.addView(status);root.addView(space(18))
+
+        val actions=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+        actions.addView(button("Pair PC"){qrLauncher.launch(ScanOptions().setPrompt("Scan the Internet relay QR").setBeepEnabled(false))},LinearLayout.LayoutParams(0,-2,1f))
+        actions.addView(space(10),LinearLayout.LayoutParams(dp(10),1))
+        actions.addView(button("Log out",false){controller?.close();controller=null;stopService(Intent(this,UnlockListenerService::class.java));session=null;store.remove("cloud_session");render()})
+        root.addView(actions);root.addView(space(26));root.addView(heading("My systems",23f))
+        root.addView(text("Lock remotely, then approve Windows unlock from your notification.",14f,MUTED));root.addView(space(10))
+
+        val pcs=store.pairs()
+        if(pcs.isEmpty()) root.addView(text("No PC paired yet. Tap Pair PC to get started.",16f,MUTED))
+        pcs.forEach{pc->
+            val box=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL;setPadding(dp(18),dp(18),dp(18),dp(16));background=shape(CARD,20,BORDER)}
+            box.addView(heading(pc.name,19f));box.addView(text(pc.userName,14f,MUTED));box.addView(space(8))
+            box.addView(text(if(pc.cloudDeviceId.isBlank())"Local only - pair again with Internet relay" else "Online relay ready",14f,if(pc.cloudDeviceId.isBlank())WARNING else SUCCESS))
+            val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+            row.addView(button("Lock PC"){lockPc(pc)},LinearLayout.LayoutParams(0,-2,1f));row.addView(space(8),LinearLayout.LayoutParams(dp(8),1))
+            row.addView(button("Remove",false){val all=store.pairs();all.removeAll{it.localDeviceId==pc.localDeviceId};store.savePairs(all);render()})
+            box.addView(space(14));box.addView(row);root.addView(box);root.addView(space(12))
+        }
+    }
+
     private fun lockPc(pc: PairedPc) {
         val a=api?:return; val s=session?:return
         if(pc.cloudDeviceId.isBlank()){toast("This PC is local-only. Pair it again using Internet relay.");return}
@@ -146,7 +191,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun biometric(title:String,done:(Boolean)->Unit){
         val allowed=BiometricManager.Authenticators.BIOMETRIC_STRONG
-        if(BiometricManager.from(this).canAuthenticate(allowed)!=BiometricManager.BIOMETRIC_SUCCESS){done(false);return}
+        if(BiometricManager.from(this).canAuthenticate(allowed)!=BiometricManager.BIOMETRIC_SUCCESS){toast("Set up a strong fingerprint or face unlock in Android settings first.");done(false);return}
         val prompt=BiometricPrompt(this,ContextCompat.getMainExecutor(this),object:BiometricPrompt.AuthenticationCallback(){
             override fun onAuthenticationSucceeded(result:BiometricPrompt.AuthenticationResult){done(true)}
             override fun onAuthenticationError(errorCode:Int,errString:CharSequence){done(false)}
@@ -159,5 +204,11 @@ class MainActivity : AppCompatActivity() {
                 .setNegativeButtonText("Cancel")
                 .build()
         )
+    }
+
+    companion object {
+        private val BG=Color.rgb(11,16,32); private val CARD=Color.rgb(20,28,48); private val SURFACE=Color.rgb(27,37,61); private val SURFACE_2=Color.rgb(42,53,78)
+        private val TEXT=Color.rgb(245,247,255); private val MUTED=Color.rgb(163,174,198); private val BORDER=Color.rgb(52,65,94); private val ACCENT=Color.rgb(224,132,39)
+        private val SUCCESS=Color.rgb(70,211,151); private val SUCCESS_BG=Color.rgb(20,61,53); private val WARNING=Color.rgb(255,190,92); private val WARNING_BG=Color.rgb(76,53,24)
     }
 }

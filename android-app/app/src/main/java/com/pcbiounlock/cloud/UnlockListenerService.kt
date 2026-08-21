@@ -25,7 +25,7 @@ class UnlockListenerService : Service() {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel("pcbu", "PC Bio Unlock", NotificationManager.IMPORTANCE_HIGH))
         startForeground(41, NotificationCompat.Builder(this, "pcbu").setContentTitle("PC Bio Unlock")
-            .setContentText("Ready for PC unlock requests").setSmallIcon(android.R.drawable.ic_lock_idle_lock).setOngoing(true).build())
+            .setContentText("Ready for fingerprint or face unlock").setSmallIcon(R.drawable.app_logo).setOngoing(true).build())
         pool.submit { listen(43300) }
         pool.submit { listen(43301) }
         startCloudListener()
@@ -42,7 +42,7 @@ class UnlockListenerService : Service() {
             val pi = PendingIntent.getActivity(this, 43, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             getSystemService(NotificationManager::class.java).notify(43,
                 NotificationCompat.Builder(this, "pcbu").setContentTitle("Remote unlock ${pc.name}?")
-                    .setContentText("Tap to confirm with fingerprint or face").setSmallIcon(android.R.drawable.ic_lock_lock)
+                    .setContentText("Tap to confirm with fingerprint or face").setSmallIcon(R.drawable.app_logo)
                     .setAutoCancel(true).setContentIntent(pi).setPriority(NotificationCompat.PRIORITY_HIGH).build())
         }).also { it.connect() }
     }
@@ -63,7 +63,7 @@ class UnlockListenerService : Service() {
                     val pi = PendingIntent.getActivity(this, 42, launch, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
                     getSystemService(NotificationManager::class.java).notify(42,
                         NotificationCompat.Builder(this, "pcbu").setContentTitle("Unlock ${pc.name}?")
-                            .setContentText("Tap to confirm with fingerprint or face").setSmallIcon(android.R.drawable.ic_lock_lock)
+                            .setContentText("Tap to confirm with fingerprint or face").setSmallIcon(R.drawable.app_logo)
                             .setAutoCancel(true).setContentIntent(pi).setPriority(NotificationCompat.PRIORITY_HIGH).build())
                 }
             }
